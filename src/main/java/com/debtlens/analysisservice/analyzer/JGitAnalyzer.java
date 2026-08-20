@@ -1,7 +1,6 @@
 package com.debtlens.analysisservice.analyzer;
 
 import com.debtlens.analysisservice.metrics.GitMetrics;
-import org.eclipse.jgit.internal.storage.file.Pack;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Path;
