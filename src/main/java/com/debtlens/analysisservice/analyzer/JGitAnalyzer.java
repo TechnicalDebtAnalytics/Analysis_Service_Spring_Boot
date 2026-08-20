@@ -1,17 +1,16 @@
 package com.debtlens.analysisservice.analyzer;
 
-public class JGitAnalyzer {
+import com.debtlens.analysisservice.metrics.GitMetrics;
+import org.eclipse.jgit.internal.storage.file.Pack;
+import org.springframework.stereotype.Component;
+
+import java.nio.file.Path;
+
+@Component
+public class JGitAnalyzer implements GitAnalyzer{
+    @Override
+    public GitMetrics analyze(Path repositoryPath){
+        return new GitMetrics();
+    }
+
 }
-/*JGitAnalyzer
-
-Responsible for Git information.
-
-For example:
-
-Commit count
-Contributors
-Commit frequency
-Code churn
-Files changed
-Author information
-History-related metrics*/
