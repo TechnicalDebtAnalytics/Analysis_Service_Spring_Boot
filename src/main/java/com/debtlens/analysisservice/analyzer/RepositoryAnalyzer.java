@@ -1,7 +1,6 @@
 package com.debtlens.analysisservice.analyzer;
 
 import com.debtlens.analysisservice.metrics.ClassMetrics;
-import com.debtlens.analysisservice.metrics.GitMetrics;
 import com.debtlens.analysisservice.metrics.RepositoryMetrics;
 import org.springframework.stereotype.Component;
 
@@ -27,15 +26,16 @@ public class RepositoryAnalyzer {
         this.jGitAnalyzer = jGitAnalyzer;
     }
 
-
     public RepositoryMetrics analyze(Path repositoryPath) {
 
-        // Analyze Java source files
+        // =====================================================
+        // 1. JavaParser analysis
+        // =====================================================
+
         System.out.println("===== JavaParser START =====");
 
         List<ClassMetrics> javaParserMetrics =
                 javaParserAnalyzer.analyze(repositoryPath);
-
 
         System.out.println(
                 "===== JavaParser END - Classes: "
@@ -44,12 +44,14 @@ public class RepositoryAnalyzer {
         );
 
 
-// Analyze CK metrics
+        // =====================================================
+        // 2. CK analysis
+        // =====================================================
+
         System.out.println("===== CK START =====");
 
         List<ClassMetrics> ckMetrics =
                 ckAnalyzer.analyze(repositoryPath);
-
 
         System.out.println(
                 "===== CK END - Classes: "
@@ -58,18 +60,10 @@ public class RepositoryAnalyzer {
         );
 
 
-// Analyze Git history
-        System.out.println("===== JGit START =====");
+        // =====================================================
+        // 3. Use JavaParser results as the base
+        // =====================================================
 
-        GitMetrics gitMetrics =
-                jGitAnalyzer.analyze(repositoryPath);
-
-        System.out.println("===== JGit END =====");
-
-        /*
-         * Use JavaParser results as the base.
-         * Then enrich each class with CK metrics.
-         */
         Map<String, ClassMetrics> classMetricsMap =
                 new HashMap<>();
 
@@ -82,10 +76,11 @@ public class RepositoryAnalyzer {
             classMetricsMap.put(key, metrics);
         }
 
-        /*
-         * Merge CK metrics into the corresponding
-         * JavaParser class metrics.
-         */
+
+        // =====================================================
+        // 4. Merge CK metrics into JavaParser metrics
+        // =====================================================
+
         for (ClassMetrics ckMetric : ckMetrics) {
 
             String key = createKey(
@@ -97,30 +92,76 @@ public class RepositoryAnalyzer {
 
             if (existing != null) {
 
-                existing.setLoc(ckMetric.getLoc());
-                existing.setCbo(ckMetric.getCbo());
-                existing.setWmc(ckMetric.getWmc());
-                existing.setDit(ckMetric.getDit());
-                existing.setRfc(ckMetric.getRfc());
-                existing.setLcom(ckMetric.getLcom());
-                existing.setNoc(ckMetric.getNoc());
-
-                existing.setMethodCount(
-                        ckMetric.getMethodCount()
+                existing.setLoc(
+                        ckMetric.getLoc()
                 );
 
-                existing.setFieldCount(
-                        ckMetric.getFieldCount()
+                existing.setCbo(
+                        ckMetric.getCbo()
+                );
+
+                existing.setWmc(
+                        ckMetric.getWmc()
+                );
+
+                existing.setDit(
+                        ckMetric.getDit()
+                );
+
+                existing.setRfc(
+                        ckMetric.getRfc()
+                );
+
+                existing.setLcom(
+                        ckMetric.getLcom()
+                );
+
+                existing.setNoc(
+                        ckMetric.getNoc()
+                );
+
+                existing.setFanin(
+                        ckMetric.getFanin()
+                );
+
+                existing.setFanout(
+                        ckMetric.getFanout()
                 );
 
             } else {
+
                 /*
-                 * If CK found a class that JavaParser did not,
-                 * keep the CK result instead of losing it.
+                 * If CK found a class that JavaParser
+                 * did not find, keep the CK result.
                  */
-                classMetricsMap.put(key, ckMetric);
+                classMetricsMap.put(
+                        key,
+                        ckMetric
+                );
             }
         }
+
+
+        // =====================================================
+        // 5. JGit file-level metrics
+        // =====================================================
+
+        System.out.println("===== JGit START =====");
+
+        List<ClassMetrics> finalClassMetrics =
+                List.copyOf(classMetricsMap.values());
+
+        jGitAnalyzer.enrichGitMetrics(
+                repositoryPath,
+                finalClassMetrics
+        );
+
+        System.out.println("===== JGit END =====");
+
+
+        // =====================================================
+        // 6. Build RepositoryMetrics
+        // =====================================================
 
         RepositoryMetrics repositoryMetrics =
                 new RepositoryMetrics();
@@ -134,17 +175,14 @@ public class RepositoryAnalyzer {
         );
 
         repositoryMetrics.setClassMetrics(
-                List.copyOf(classMetricsMap.values())
-        );
-
-        repositoryMetrics.setGitMetrics(
-                gitMetrics
+                finalClassMetrics
         );
 
         return repositoryMetrics;
     }
 
     private String createKey(String filePath) {
+
         return Path.of(filePath)
                 .toAbsolutePath()
                 .normalize()

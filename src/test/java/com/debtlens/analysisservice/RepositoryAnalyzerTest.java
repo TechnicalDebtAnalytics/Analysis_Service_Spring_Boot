@@ -4,6 +4,7 @@ import com.debtlens.analysisservice.analyzer.CKAnalyzer;
 import com.debtlens.analysisservice.analyzer.JGitAnalyzer;
 import com.debtlens.analysisservice.analyzer.JavaParserAnalyzer;
 import com.debtlens.analysisservice.analyzer.RepositoryAnalyzer;
+import com.debtlens.analysisservice.metrics.ClassMetrics;
 import com.debtlens.analysisservice.metrics.RepositoryMetrics;
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +31,8 @@ class RepositoryAnalyzerTest {
         JGitAnalyzer jGitAnalyzer =
                 new JGitAnalyzer();
 
-        // Create RepositoryAnalyzer with its dependencies
+
+        // Create RepositoryAnalyzer
         RepositoryAnalyzer analyzer =
                 new RepositoryAnalyzer(
                         javaParserAnalyzer,
@@ -38,49 +40,88 @@ class RepositoryAnalyzerTest {
                         jGitAnalyzer
                 );
 
+
         // Analyze repository
         RepositoryMetrics metrics =
                 analyzer.analyze(repositoryPath);
 
+
         // Basic validation
         assertNotNull(metrics);
 
+
         // Repository information
         assertNotNull(metrics.getRepositoryId());
+
         assertNotNull(metrics.getRepositoryName());
 
-        // Java + CK metrics
-        assertNotNull(metrics.getClassMetrics());
-        assertFalse(metrics.getClassMetrics().isEmpty());
 
-        // Git metrics
-        assertNotNull(metrics.getGitMetrics());
-        assertTrue(
-                metrics.getGitMetrics().getCommitCount() > 0
+        // Class metrics validation
+        assertNotNull(metrics.getClassMetrics());
+
+        assertFalse(
+                metrics.getClassMetrics().isEmpty()
         );
+
+
+        // Check first class contains analysis metrics
+        ClassMetrics firstClass =
+                metrics.getClassMetrics().get(0);
+
+
+        assertNotNull(firstClass);
+
+        assertNotNull(
+                firstClass.getClassName()
+        );
+
+        assertNotNull(
+                firstClass.getFilePath()
+        );
+
+
+        // Git metrics are now inside ClassMetrics
+        assertTrue(
+                firstClass.getNumberOfVersionsUntil() >= 0
+        );
+
+        assertTrue(
+                firstClass.getNumberOfAuthorsUntil() >= 0
+        );
+
 
         // Print results
-        System.out.println("========== REPOSITORY ANALYSIS ==========");
         System.out.println(
-                "Repository : " +
-                        metrics.getRepositoryName()
+                "========== REPOSITORY ANALYSIS =========="
         );
 
         System.out.println(
-                "Classes    : " +
-                        metrics.getClassMetrics().size()
+                "Repository : "
+                        + metrics.getRepositoryName()
         );
 
         System.out.println(
-                "Commits    : " +
-                        metrics.getGitMetrics().getCommitCount()
+                "Classes    : "
+                        + metrics.getClassMetrics().size()
         );
 
         System.out.println(
-                "Authors    : " +
-                        metrics.getGitMetrics().getAuthorCount()
+                "First Class: "
+                        + firstClass.getClassName()
         );
 
-        System.out.println("=========================================");
+        System.out.println(
+                "Versions   : "
+                        + firstClass.getNumberOfVersionsUntil()
+        );
+
+        System.out.println(
+                "Authors    : "
+                        + firstClass.getNumberOfAuthorsUntil()
+        );
+
+        System.out.println(
+                "========================================="
+        );
     }
 }

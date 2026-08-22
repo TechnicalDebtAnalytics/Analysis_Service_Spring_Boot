@@ -40,10 +40,16 @@ public class CKAnalyzer implements CodeAnalyzer {
                 metrics.setLcom(result.getLcom());
                 metrics.setNoc(result.getNoc());
 
-                // Additional class information
-                metrics.setMethodCount(result.getNumberOfMethods());
-                metrics.setFieldCount(result.getNumberOfFields());
+                metrics.setFanin(result.getFanin());
+                metrics.setFanout(result.getFanout());
 
+                metrics.setNumberOfMethods(
+                        result.getNumberOfMethods()
+                );
+
+                metrics.setNumberOfAttributes(
+                        result.getNumberOfFields()
+                );
                 results.add(metrics);
             }
 

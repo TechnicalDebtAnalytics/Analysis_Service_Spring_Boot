@@ -4,20 +4,50 @@ import lombok.Data;
 
 @Data
 public class ClassMetrics {
-    private String className;   //name of the Java class
-    private String packageName; //package containing the class
-    private String filePath;    //source file location
 
-    private int loc;    //Lines of Code
+    private String className;
+    private String filePath;
 
-    private int cbo;    //Coupling Between Objects
-    private int wmc;    //Weighted Methods per Class
-    private int dit;    //Depth of Inheritance Tree
-    private int rfc;    //Response For a Class
-    private int lcom;   //Lack of Cohesion of Methods
-    private int noc;    //Number of Children
+    private int startLine;
+    private int endLine;
 
-    private int methodCount;    //number of methods
-    private int fieldCount;     //number of fields
+    private int loc;
+    private double cyclomaticComplexity;
+
+    private int dit;
+    private int cbo;
+    private int fanin;
+    private int fanout;
+    private double lcom;
+    private int noc;
+
+    private int numberOfAttributes;
+    private int numberOfLinesOfCode;
+    private int numberOfMethods;
+    private int numberOfPrivateAttributes;
+    private int numberOfPrivateMethods;
+    private int numberOfPublicAttributes;
+    private int numberOfPublicMethods;
+
+    private int rfc;
+    private double wmc;
+
+    // Git history metrics
+    private int numberOfVersionsUntil;
+    private int numberOfAuthorsUntil;
+
+    private int linesAddedUntil;
+    private int maxLinesAddedUntil;
+    private double avgLinesAddedUntil;
+
+    private int linesRemovedUntil;
+    private int maxLinesRemovedUntil;
+    private double avgLinesRemovedUntil;
+
+    private int codeChurnUntil;
+    private int maxCodeChurnUntil;
+    private double avgCodeChurnUntil;
+
+    private double ageWithRespectTo;
+    private double weightedAgeWithRespectTo;
 }
-

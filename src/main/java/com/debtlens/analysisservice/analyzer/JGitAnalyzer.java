@@ -1,6 +1,6 @@
 package com.debtlens.analysisservice.analyzer;
 
-import com.debtlens.analysisservice.metrics.GitMetrics;
+import com.debtlens.analysisservice.metrics.ClassMetrics;
 import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.ObjectReader;
@@ -16,96 +16,88 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Component
-public class JGitAnalyzer implements GitAnalyzer {
+public class JGitAnalyzer {
 
-    @Override
-    public GitMetrics analyze(Path repositoryPath) {
+    public void enrichGitMetrics(
+            Path repositoryPath,
+            List<ClassMetrics> classMetrics
+    ) {
 
-        GitMetrics metrics = new GitMetrics();
+        Map<String, FileHistory> historyMap =
+                new HashMap<>();
 
-        Set<String> authors = new HashSet<>();
+        for (ClassMetrics classMetric : classMetrics) {
+
+            Path filePath =
+                    Path.of(classMetric.getFilePath())
+                            .toAbsolutePath()
+                            .normalize();
+
+            String relativePath =
+                    repositoryPath
+                            .toAbsolutePath()
+                            .normalize()
+                            .relativize(filePath)
+                            .toString()
+                            .replace("\\", "/");
+
+            historyMap.put(
+                    relativePath,
+                    new FileHistory()
+            );
+        }
 
         try (Repository repository = new FileRepositoryBuilder()
-                .setGitDir(repositoryPath.resolve(".git").toFile())
-                .setWorkTree(repositoryPath.toFile())
+                .setGitDir(
+                        repositoryPath.resolve(".git").toFile()
+                )
+                .setWorkTree(
+                        repositoryPath.toFile()
+                )
                 .build()) {
 
             ObjectId head = repository.resolve("HEAD");
 
             if (head == null) {
-                return metrics;
+                return;
             }
 
             try (RevWalk revWalk = new RevWalk(repository)) {
 
-                RevCommit headCommit = revWalk.parseCommit(head);
-                revWalk.markStart(headCommit);
+                RevCommit headCommit =
+                        revWalk.parseCommit(head);
 
-                LocalDateTime latestCommitTime = null;
+                revWalk.markStart(headCommit);
 
                 for (RevCommit commit : revWalk) {
 
-                    // Commit count
-                    metrics.setCommitCount(metrics.getCommitCount() + 1);
-
-                    // Unique authors
-                    if (commit.getAuthorIdent() != null) {
-                        authors.add(commit.getAuthorIdent().getEmailAddress());
+                    if (commit.getParentCount() == 0) {
+                        continue;
                     }
 
-                    // Latest modification time
-                    LocalDateTime commitTime = Instant.ofEpochSecond(
-                                    commit.getCommitTime()
-                            )
-                            .atZone(ZoneId.systemDefault())
-                            .toLocalDateTime();
+                    RevCommit parent =
+                            revWalk.parseCommit(
+                                    commit.getParent(0).getId()
+                            );
 
-                    if (latestCommitTime == null ||
-                            commitTime.isAfter(latestCommitTime)) {
-
-                        latestCommitTime = commitTime;
-                    }
-
-                    // Calculate added/deleted lines
-                    if (commit.getParentCount() > 0) {
-
-                        RevCommit parent = revWalk.parseCommit(
-                                commit.getParent(0).getId()
-                        );
-
-                        int[] changes = calculateLineChanges(
-                                repository,
-                                parent,
-                                commit
-                        );
-
-                        metrics.setLinesAdded(
-                                metrics.getLinesAdded() + changes[0]
-                        );
-
-                        metrics.setLinesDeleted(
-                                metrics.getLinesDeleted() + changes[1]
-                        );
-                    }
+                    processCommit(
+                            repository,
+                            parent,
+                            commit,
+                            historyMap
+                    );
                 }
-
-                metrics.setAuthorCount(authors.size());
-
-                if (latestCommitTime != null) {
-                    metrics.setLastModified(latestCommitTime);
-                }
-
-                metrics.setChurn(
-                        metrics.getLinesAdded()
-                                + metrics.getLinesDeleted()
-                );
             }
 
         } catch (Exception e) {
+
             throw new RuntimeException(
                     "Git analysis failed for repository: "
                             + repositoryPath,
@@ -113,17 +105,50 @@ public class JGitAnalyzer implements GitAnalyzer {
             );
         }
 
-        return metrics;
+        /*
+         * Copy the calculated Git history
+         * into each ClassMetrics object.
+         */
+        for (ClassMetrics classMetric : classMetrics) {
+
+            Path filePath =
+                    Path.of(classMetric.getFilePath())
+                            .toAbsolutePath()
+                            .normalize();
+
+            String relativePath =
+                    repositoryPath
+                            .toAbsolutePath()
+                            .normalize()
+                            .relativize(filePath)
+                            .toString()
+                            .replace("\\", "/");
+
+            FileHistory history =
+                    historyMap.get(relativePath);
+
+            if (history != null) {
+                applyMetrics(
+                        classMetric,
+                        history
+                );
+            }
+        }
     }
 
-    private int[] calculateLineChanges(
+    private void processCommit(
             Repository repository,
             RevCommit parent,
-            RevCommit commit) throws Exception {
+            RevCommit commit,
+            Map<String, FileHistory> historyMap
+    ) throws Exception {
 
-        try (ObjectReader reader = repository.newObjectReader();
+        try (ObjectReader reader =
+                     repository.newObjectReader();
              DiffFormatter diffFormatter =
-                     new DiffFormatter(new ByteArrayOutputStream())) {
+                     new DiffFormatter(
+                             new ByteArrayOutputStream()
+                     )) {
 
             CanonicalTreeParser parentTree =
                     new CanonicalTreeParser();
@@ -142,41 +167,229 @@ public class JGitAnalyzer implements GitAnalyzer {
             );
 
             diffFormatter.setRepository(repository);
+            diffFormatter.setDetectRenames(true);
 
-            var entries = diffFormatter.scan(
-                    parentTree,
-                    commitTree
-            );
-
-            int added = 0;
-            int deleted = 0;
+            var entries =
+                    diffFormatter.scan(
+                            parentTree,
+                            commitTree
+                    );
 
             for (var entry : entries) {
 
-                try (ByteArrayOutputStream output = new ByteArrayOutputStream();
-                     DiffFormatter formatter = new DiffFormatter(output)) {
+                String filePath =
+                        entry.getNewPath();
 
-                    formatter.setRepository(repository);
-                    formatter.setDetectRenames(true);
-
-                    formatter.format(entry);
-
-                    String diff = output.toString();
-
-                    for (String line : diff.split("\n")) {
-
-                        if (line.startsWith("+") && !line.startsWith("+++")) {
-                            added++;
-                        }
-
-                        if (line.startsWith("-") && !line.startsWith("---")) {
-                            deleted++;
-                        }
-                    }
+                /*
+                 * Ignore deleted files because
+                 * there is no current file to attach
+                 * the metrics to.
+                 */
+                if ("/dev/null".equals(filePath)) {
+                    continue;
                 }
+
+                /*
+                 * We currently analyze Java files.
+                 */
+                if (!filePath.endsWith(".java")) {
+                    continue;
+                }
+
+                FileHistory history =
+                        historyMap.get(filePath);
+
+                if (history == null) {
+                    continue;
+                }
+
+                int[] changes =
+                        calculateLineChanges(
+                                repository,
+                                parentTree,
+                                commitTree,
+                                entry
+                        );
+
+                history.versionCount++;
+
+                if (commit.getAuthorIdent() != null) {
+
+                    history.authors.add(
+                            commit.getAuthorIdent()
+                                    .getEmailAddress()
+                    );
+                }
+
+                int added = changes[0];
+                int deleted = changes[1];
+
+                int churn =
+                        added + deleted;
+
+                history.linesAdded += added;
+                history.linesRemoved += deleted;
+                history.codeChurn += churn;
+
+                history.maxLinesAdded =
+                        Math.max(
+                                history.maxLinesAdded,
+                                added
+                        );
+
+                history.maxLinesRemoved =
+                        Math.max(
+                                history.maxLinesRemoved,
+                                deleted
+                        );
+
+                history.maxCodeChurn =
+                        Math.max(
+                                history.maxCodeChurn,
+                                churn
+                        );
+            }
+        }
+    }
+
+    private int[] calculateLineChanges(
+            Repository repository,
+            CanonicalTreeParser parentTree,
+            CanonicalTreeParser commitTree,
+            org.eclipse.jgit.diff.DiffEntry entry
+    ) throws Exception {
+
+        ByteArrayOutputStream output =
+                new ByteArrayOutputStream();
+
+        try (DiffFormatter formatter =
+                     new DiffFormatter(output)) {
+
+            formatter.setRepository(repository);
+            formatter.setDetectRenames(true);
+
+            formatter.format(entry);
+        }
+
+        String diff =
+                output.toString();
+
+        int added = 0;
+        int deleted = 0;
+
+        for (String line : diff.split("\n")) {
+
+            if (line.startsWith("+")
+                    && !line.startsWith("+++")) {
+
+                added++;
             }
 
-            return new int[]{added, deleted};
+            if (line.startsWith("-")
+                    && !line.startsWith("---")) {
+
+                deleted++;
+            }
         }
+
+        return new int[]{
+                added,
+                deleted
+        };
+    }
+
+    private void applyMetrics(
+            ClassMetrics metrics,
+            FileHistory history
+    ) {
+
+        metrics.setNumberOfVersionsUntil(
+                history.versionCount
+        );
+
+        metrics.setNumberOfAuthorsUntil(
+                history.authors.size()
+        );
+
+        metrics.setLinesAddedUntil(
+                history.linesAdded
+        );
+
+        metrics.setMaxLinesAddedUntil(
+                history.maxLinesAdded
+        );
+
+        metrics.setAvgLinesAddedUntil(
+                average(
+                        history.linesAdded,
+                        history.versionCount
+                )
+        );
+
+        metrics.setLinesRemovedUntil(
+                history.linesRemoved
+        );
+
+        metrics.setMaxLinesRemovedUntil(
+                history.maxLinesRemoved
+        );
+
+        metrics.setAvgLinesRemovedUntil(
+                average(
+                        history.linesRemoved,
+                        history.versionCount
+                )
+        );
+
+        metrics.setCodeChurnUntil(
+                history.codeChurn
+        );
+
+        metrics.setMaxCodeChurnUntil(
+                history.maxCodeChurn
+        );
+
+        metrics.setAvgCodeChurnUntil(
+                average(
+                        history.codeChurn,
+                        history.versionCount
+                )
+        );
+
+        /*
+         * We will implement these after
+         * confirming the exact formula.
+         */
+        metrics.setAgeWithRespectTo(0);
+        metrics.setWeightedAgeWithRespectTo(0);
+    }
+
+    private double average(
+            int total,
+            int count
+    ) {
+
+        if (count == 0) {
+            return 0.0;
+        }
+
+        return (double) total / count;
+    }
+
+    private static class FileHistory {
+
+        int versionCount;
+
+        Set<String> authors =
+                new HashSet<>();
+
+        int linesAdded;
+        int maxLinesAdded;
+
+        int linesRemoved;
+        int maxLinesRemoved;
+
+        int codeChurn;
+        int maxCodeChurn;
     }
 }
