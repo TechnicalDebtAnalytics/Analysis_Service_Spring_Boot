@@ -128,6 +128,14 @@ public class RepositoryAnalyzer {
                         ckMetric.getFanout()
                 );
 
+                existing.setNumberOfMethods(
+                        ckMetric.getNumberOfMethods()
+                );
+
+                existing.setNumberOfAttributes(
+                        ckMetric.getNumberOfAttributes()
+                );
+
             } else {
 
                 /*

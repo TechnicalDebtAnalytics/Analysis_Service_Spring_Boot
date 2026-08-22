@@ -14,8 +14,8 @@ public class ClassMetrics {
     private int loc;
     private double cyclomaticComplexity;
 
-    private int dit;
-    private int cbo;
+    private int dit;    //Depth of Inheritance Tree
+    private int cbo;   //Coupling Between Objects
     private int fanin;
     private int fanout;
     private double lcom;
@@ -29,8 +29,8 @@ public class ClassMetrics {
     private int numberOfPublicAttributes;
     private int numberOfPublicMethods;
 
-    private int rfc;
-    private double wmc;
+    private int rfc;    //Response For Class
+    private double wmc;     //Weighted Methods per Class
 
     // Git history metrics
     private int numberOfVersionsUntil;
