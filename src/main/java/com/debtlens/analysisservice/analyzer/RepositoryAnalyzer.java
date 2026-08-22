@@ -27,19 +27,42 @@ public class RepositoryAnalyzer {
         this.jGitAnalyzer = jGitAnalyzer;
     }
 
+
     public RepositoryMetrics analyze(Path repositoryPath) {
 
         // Analyze Java source files
+        System.out.println("===== JavaParser START =====");
+
         List<ClassMetrics> javaParserMetrics =
                 javaParserAnalyzer.analyze(repositoryPath);
 
-        // Analyze CK metrics
+        System.out.println(
+                "===== JavaParser END - Classes: "
+                        + javaParserMetrics.size()
+                        + " ====="
+        );
+
+
+// Analyze CK metrics
+        System.out.println("===== CK START =====");
+
         List<ClassMetrics> ckMetrics =
                 ckAnalyzer.analyze(repositoryPath);
 
-        // Analyze Git history
+        System.out.println(
+                "===== CK END - Classes: "
+                        + ckMetrics.size()
+                        + " ====="
+        );
+
+
+// Analyze Git history
+        System.out.println("===== JGit START =====");
+
         GitMetrics gitMetrics =
                 jGitAnalyzer.analyze(repositoryPath);
+
+        System.out.println("===== JGit END =====");
 
         /*
          * Use JavaParser results as the base.
