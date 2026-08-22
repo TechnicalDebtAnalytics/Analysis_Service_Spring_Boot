@@ -36,6 +36,7 @@ public class RepositoryAnalyzer {
         List<ClassMetrics> javaParserMetrics =
                 javaParserAnalyzer.analyze(repositoryPath);
 
+
         System.out.println(
                 "===== JavaParser END - Classes: "
                         + javaParserMetrics.size()
@@ -48,6 +49,7 @@ public class RepositoryAnalyzer {
 
         List<ClassMetrics> ckMetrics =
                 ckAnalyzer.analyze(repositoryPath);
+
 
         System.out.println(
                 "===== CK END - Classes: "
@@ -74,7 +76,6 @@ public class RepositoryAnalyzer {
         for (ClassMetrics metrics : javaParserMetrics) {
 
             String key = createKey(
-                    metrics.getClassName(),
                     metrics.getFilePath()
             );
 
@@ -88,7 +89,6 @@ public class RepositoryAnalyzer {
         for (ClassMetrics ckMetric : ckMetrics) {
 
             String key = createKey(
-                    ckMetric.getClassName(),
                     ckMetric.getFilePath()
             );
 
@@ -144,13 +144,10 @@ public class RepositoryAnalyzer {
         return repositoryMetrics;
     }
 
-    private String createKey(
-            String className,
-            String filePath
-    ) {
-        return className + "::" +
-                Path.of(filePath)
-                        .toAbsolutePath()
-                        .normalize();
+    private String createKey(String filePath) {
+        return Path.of(filePath)
+                .toAbsolutePath()
+                .normalize()
+                .toString();
     }
 }
