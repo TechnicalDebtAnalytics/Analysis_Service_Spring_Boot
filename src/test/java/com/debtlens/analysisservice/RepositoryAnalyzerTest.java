@@ -146,13 +146,8 @@ class RepositoryAnalyzerTest {
         // Code metrics
 
         System.out.println(
-                "LOC                     : "
-                        + firstClass.getLoc()
-        );
-
-        System.out.println(
-                "Cyclomatic Complexity   : "
-                        + firstClass.getCyclomaticComplexity()
+                "Number of Lines of Code : "
+                        + firstClass.getNumberOfLinesOfCode()
         );
 
 

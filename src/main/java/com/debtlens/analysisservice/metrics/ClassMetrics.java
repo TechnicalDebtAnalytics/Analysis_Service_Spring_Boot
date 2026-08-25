@@ -11,9 +11,6 @@ public class ClassMetrics {
     private int startLine;
     private int endLine;
 
-    private int loc;
-    private double cyclomaticComplexity;
-
     private int dit;    //Depth of Inheritance Tree
     private int cbo;   //Coupling Between Objects
     private int fanin;
@@ -50,4 +47,6 @@ public class ClassMetrics {
 
     private double ageWithRespectTo;
     private double weightedAgeWithRespectTo;
+
+    private java.util.List<String> comments = new java.util.ArrayList<>();
 }
