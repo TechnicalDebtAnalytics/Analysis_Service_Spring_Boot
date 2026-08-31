@@ -5,7 +5,7 @@ on:
     branches:
       - main
       - develop
-      -muditha/CloudAMQP
+      - muditha/CloudAMQP
 
   pull_request:
     branches:
