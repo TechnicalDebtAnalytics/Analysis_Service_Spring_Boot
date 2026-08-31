@@ -15,20 +15,18 @@ class JGitAnalyzerTest {
     @Test
     void shouldEnrichClassGitMetrics() {
 
-        // Change this to the path of a real Git repository
-        Path repositoryPath = Path.of(
-                "/home/nalina/Desktop/Technical Debt/Analysis_Service_Spring_Boot"
-        );
+        // Use current project root directory as test repository
+        Path repositoryPath = Path.of("").toAbsolutePath();
 
         JGitAnalyzer analyzer = new JGitAnalyzer();
 
         // Create sample class metrics
         ClassMetrics classMetrics = new ClassMetrics();
 
-        classMetrics.setClassName("AnalysisService");
+        classMetrics.setClassName("AnalysisServiceApplication");
         classMetrics.setFilePath(
                 repositoryPath
-                        .resolve("src/main/java/com/debtlens/analysisservice/AnalysisService.java")
+                        .resolve("src/main/java/com/debtlens/analysisservice/AnalysisServiceApplication.java")
                         .toString()
         );
 

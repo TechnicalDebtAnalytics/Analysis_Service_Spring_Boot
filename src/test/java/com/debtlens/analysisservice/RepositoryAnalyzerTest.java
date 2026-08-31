@@ -17,9 +17,7 @@ class RepositoryAnalyzerTest {
     @Test
     void shouldAnalyzeRepository() {
 
-        Path repositoryPath = Path.of(
-                "/home/nalina/Desktop/Technical Debt/Analysis_Service_Spring_Boot"
-        );
+        Path repositoryPath = Path.of("").toAbsolutePath();
 
 
         // Create analyzers
