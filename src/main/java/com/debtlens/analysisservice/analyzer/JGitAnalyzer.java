@@ -8,9 +8,7 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-import org.eclipse.jgit.treewalk.AbstractTreeIterator;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
-import org.eclipse.jgit.treewalk.EmptyTreeIterator;
 import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
@@ -107,12 +105,15 @@ public class JGitAnalyzer {
 
                 for (RevCommit commit : revWalk) {
 
-                    RevCommit parent = (commit.getParentCount() > 0)
-                            ? revWalk.parseCommit(
+                    if (commit.getParentCount() == 0) {
+                        continue;
+                    }
+
+                    RevCommit parent =
+                            revWalk.parseCommit(
                                     commit.getParent(0)
                                             .getId()
-                            )
-                            : null;
+                            );
 
                     processCommit(
                             repository,
@@ -195,20 +196,13 @@ public class JGitAnalyzer {
 
 
 
-            AbstractTreeIterator parentTree;
+            CanonicalTreeParser parentTree =
+                    new CanonicalTreeParser();
 
-            if (parent != null) {
-                CanonicalTreeParser pTree =
-                        new CanonicalTreeParser();
-                pTree.reset(
-                        reader,
-                        parent.getTree()
-                );
-                parentTree = pTree;
-            } else {
-                parentTree =
-                        new EmptyTreeIterator();
-            }
+            parentTree.reset(
+                    reader,
+                    parent.getTree()
+            );
 
             CanonicalTreeParser commitTree =
                     new CanonicalTreeParser();

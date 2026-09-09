@@ -23,10 +23,10 @@ class JGitAnalyzerTest {
         // Create sample class metrics
         ClassMetrics classMetrics = new ClassMetrics();
 
-        classMetrics.setClassName("AnalysisServiceApplication");
+        classMetrics.setClassName("AnalysisResultPublisher");
         classMetrics.setFilePath(
                 repositoryPath
-                        .resolve("src/main/java/com/debtlens/analysisservice/AnalysisServiceApplication.java")
+                        .resolve("src/main/java/com/debtlens/analysisservice/messaging/AnalysisResultPublisher.java")
                         .toString()
         );
 
