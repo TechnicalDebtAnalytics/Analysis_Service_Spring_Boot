@@ -6,26 +6,19 @@ on:
       - main
       - develop
       - muditha/CloudAMQP
-<<<<<<< Updated upstream
-
-=======
       - deployment
       - muditha/testing
->>>>>>> Stashed changes
   pull_request:
     branches:
       - main
       - develop
       - muditha/CloudAMQP
-<<<<<<< Updated upstream
-=======
       - deployment
       - muditha/testing
 
 permissions:
   contents: read
   packages: write
->>>>>>> Stashed changes
 
 jobs:
   build:
