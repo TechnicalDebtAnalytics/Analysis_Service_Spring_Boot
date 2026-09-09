@@ -1,9 +1,15 @@
+server:
+  port: ${PORT:8082}
+
 spring:
   application:
     name: analysis-service
 
   rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
+    host: ${RABBITMQ_HOST:armadillo.rmq.cloudamqp.com}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:sjumcaud}
+    password: ${RABBITMQ_PASSWORD:k3sPvM-CWYrTycLdHDggrd7KY6aERY_V}
+    virtual-host: ${RABBITMQ_VHOST:sjumcaud}
+    ssl:
+      enabled: ${RABBITMQ_SSL_ENABLED:false}

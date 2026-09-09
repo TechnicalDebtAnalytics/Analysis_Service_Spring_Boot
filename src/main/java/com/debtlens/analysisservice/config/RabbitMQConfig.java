@@ -10,10 +10,10 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitMQConfig {
 
     public static final String ANALYSIS_JOB_QUEUE =
-            "analysis.job.queue";
+            "analysis_job_creation.queue";
 
     public static final String ANALYSIS_RESULT_QUEUE =
-            "analysis.result.queue";
+            "analysis_job_results.queue";
 
     @Bean
     public Queue analysisJobQueue() {
@@ -33,6 +33,7 @@ public class RabbitMQConfig {
 
     @Bean
     public MessageConverter messageConverter() {
-        return new JacksonJsonMessageConverter();
+        JacksonJsonMessageConverter converter = new JacksonJsonMessageConverter();
+        return converter;
     }
 }

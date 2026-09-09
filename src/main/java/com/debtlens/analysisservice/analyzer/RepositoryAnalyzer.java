@@ -92,10 +92,6 @@ public class RepositoryAnalyzer {
 
             if (existing != null) {
 
-                existing.setLoc(
-                        ckMetric.getLoc()
-                );
-
                 existing.setCbo(
                         ckMetric.getCbo()
                 );

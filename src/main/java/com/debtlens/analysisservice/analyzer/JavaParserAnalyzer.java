@@ -7,14 +7,6 @@ import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.expr.BinaryExpr;
-import com.github.javaparser.ast.expr.ConditionalExpr;
-import com.github.javaparser.ast.stmt.CatchClause;
-import com.github.javaparser.ast.stmt.DoStmt;
-import com.github.javaparser.ast.stmt.ForEachStmt;
-import com.github.javaparser.ast.stmt.ForStmt;
-import com.github.javaparser.ast.stmt.IfStmt;
-import com.github.javaparser.ast.stmt.WhileStmt;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -38,30 +30,15 @@ public class JavaParserAnalyzer implements CodeAnalyzer {
 
 
             files
-                    // Ignore git files
-                    .filter(path ->
-                            !path.toString().contains("/.git/")
-                    )
-
-                    // Ignore build folders
-                    .filter(path ->
-                            !path.toString().contains("/target/")
-                    )
-
-                    .filter(path ->
-                            !path.toString().contains("/build/")
-                    )
-
-                    // Ignore test source files
-                    .filter(path ->
-                            !path.toString().contains("/test/")
-                    )
-
-                    // Only Java files
-                    .filter(path ->
-                            path.toString().endsWith(".java")
-                    )
-
+                    .filter(path -> {
+                        String normalized = path.toString().replace('\\', '/');
+                        return normalized.endsWith(".java")
+                                && !normalized.contains("/.git/")
+                                && !normalized.contains("/target/")
+                                && !normalized.contains("/build/")
+                                && !normalized.contains("/.gradle/")
+                                && !normalized.contains("/src/test/");
+                    })
                     .forEach(path ->
                             analyzeFile(path, results)
                     );
@@ -234,24 +211,6 @@ public class JavaParserAnalyzer implements CodeAnalyzer {
 
 
                         // -------------------------
-                        // Complexity
-                        // -------------------------
-
-                        int complexity =
-                                calculateCyclomaticComplexity(
-                                        methods
-                                );
-
-
-                        metrics.setCyclomaticComplexity(
-                                complexity
-                        );
-
-
-
-
-
-                        // -------------------------
                         // Attributes
                         // -------------------------
 
@@ -312,9 +271,36 @@ public class JavaParserAnalyzer implements CodeAnalyzer {
                                 privateAttributes
                         );
 
+                        // -------------------------
+                        // Comments extraction
+                        // -------------------------
+                        List<String> extractedComments = new ArrayList<>();
 
+                        // 1. Comments inside the class body
+                        classDeclaration.getAllContainedComments().forEach(comment -> {
+                            String content = comment.getContent();
+                            if (content != null && !content.trim().isBlank()) {
+                                extractedComments.add(content.trim());
+                            }
+                        });
 
+                        // 2. Class declaration comment / Javadoc header
+                        classDeclaration.getComment().ifPresent(comment -> {
+                            String content = comment.getContent();
+                            if (content != null && !content.trim().isBlank() && !extractedComments.contains(content.trim())) {
+                                extractedComments.add(0, content.trim());
+                            }
+                        });
 
+                        // 3. Entire file comments (if single class file)
+                        compilationUnit.getAllContainedComments().forEach(comment -> {
+                            String content = comment.getContent();
+                            if (content != null && !content.trim().isBlank() && !extractedComments.contains(content.trim())) {
+                                extractedComments.add(content.trim());
+                            }
+                        });
+
+                        metrics.setComments(extractedComments);
 
                         results.add(metrics);
 
@@ -346,81 +332,5 @@ public class JavaParserAnalyzer implements CodeAnalyzer {
 
 
 
-
-    private int calculateCyclomaticComplexity(
-            List<MethodDeclaration> methods
-    ){
-
-
-        int totalComplexity = 0;
-
-
-
-        for(MethodDeclaration method : methods){
-
-
-            int methodComplexity = 1;
-
-
-
-            methodComplexity +=
-                    method.findAll(IfStmt.class).size();
-
-
-            methodComplexity +=
-                    method.findAll(ForStmt.class).size();
-
-
-            methodComplexity +=
-                    method.findAll(ForEachStmt.class).size();
-
-
-            methodComplexity +=
-                    method.findAll(WhileStmt.class).size();
-
-
-            methodComplexity +=
-                    method.findAll(DoStmt.class).size();
-
-
-            methodComplexity +=
-                    method.findAll(CatchClause.class).size();
-
-
-            methodComplexity +=
-                    method.findAll(ConditionalExpr.class).size();
-
-
-
-            for(BinaryExpr expression :
-                    method.findAll(BinaryExpr.class)){
-
-
-                if(expression.getOperator()
-                        ==
-                        BinaryExpr.Operator.AND
-                        ||
-                        expression.getOperator()
-                                ==
-                                BinaryExpr.Operator.OR){
-
-
-                    methodComplexity++;
-
-                }
-
-            }
-
-
-
-            totalComplexity += methodComplexity;
-
-        }
-
-
-
-        return totalComplexity;
-
-    }
 
 }

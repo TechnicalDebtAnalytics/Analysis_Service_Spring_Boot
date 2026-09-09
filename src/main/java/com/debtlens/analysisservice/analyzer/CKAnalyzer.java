@@ -32,7 +32,6 @@ public class CKAnalyzer implements CodeAnalyzer {
                 metrics.setFilePath(result.getFile());
 
                 // CK metrics
-                metrics.setLoc(result.getLoc());
                 metrics.setCbo(result.getCbo());
                 metrics.setWmc(result.getWmc());
                 metrics.setDit(result.getDit());
