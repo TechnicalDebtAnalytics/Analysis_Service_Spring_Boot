@@ -105,18 +105,15 @@ public class JGitAnalyzer {
 
                 for (RevCommit commit : revWalk) {
 
-
                     if (commit.getParentCount() == 0) {
                         continue;
                     }
-
 
                     RevCommit parent =
                             revWalk.parseCommit(
                                     commit.getParent(0)
                                             .getId()
                             );
-
 
                     processCommit(
                             repository,
@@ -202,17 +199,13 @@ public class JGitAnalyzer {
             CanonicalTreeParser parentTree =
                     new CanonicalTreeParser();
 
-
             parentTree.reset(
                     reader,
                     parent.getTree()
             );
 
-
-
             CanonicalTreeParser commitTree =
                     new CanonicalTreeParser();
-
 
             commitTree.reset(
                     reader,

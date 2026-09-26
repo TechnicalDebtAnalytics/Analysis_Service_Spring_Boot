@@ -96,11 +96,13 @@ class RepositoryAnalyzerTest {
         // Git metrics validation
 
         assertTrue(
-                firstClass.getNumberOfVersionsUntil() >= 0
+                firstClass.getNumberOfVersionsUntil() > 0,
+                "Versions should be greater than 0"
         );
 
         assertTrue(
-                firstClass.getNumberOfAuthorsUntil() >= 0
+                firstClass.getNumberOfAuthorsUntil() > 0,
+                "Authors should be greater than 0"
         );
 
 

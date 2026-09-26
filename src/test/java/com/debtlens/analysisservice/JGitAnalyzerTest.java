@@ -23,10 +23,10 @@ class JGitAnalyzerTest {
         // Create sample class metrics
         ClassMetrics classMetrics = new ClassMetrics();
 
-        classMetrics.setClassName("AnalysisServiceApplication");
+        classMetrics.setClassName("AnalysisResultPublisher");
         classMetrics.setFilePath(
                 repositoryPath
-                        .resolve("src/main/java/com/debtlens/analysisservice/AnalysisServiceApplication.java")
+                        .resolve("src/main/java/com/debtlens/analysisservice/messaging/AnalysisResultPublisher.java")
                         .toString()
         );
 
@@ -86,23 +86,28 @@ class JGitAnalyzerTest {
         assertNotNull(result);
 
         assertTrue(
-                result.getNumberOfVersionsUntil() >= 0
+                result.getNumberOfVersionsUntil() > 0,
+                "Versions should be greater than 0"
         );
 
         assertTrue(
-                result.getNumberOfAuthorsUntil() >= 0
+                result.getNumberOfAuthorsUntil() > 0,
+                "Authors should be greater than 0"
         );
 
         assertTrue(
-                result.getLinesAddedUntil() >= 0
+                result.getLinesAddedUntil() > 0,
+                "Lines added should be greater than 0"
         );
 
         assertTrue(
-                result.getLinesRemovedUntil() >= 0
+                result.getLinesRemovedUntil() >= 0,
+                "Lines removed cannot be negative"
         );
 
         assertTrue(
-                result.getCodeChurnUntil() >= 0
+                result.getCodeChurnUntil() > 0,
+                "Code churn should be greater than 0"
         );
     }
 }
