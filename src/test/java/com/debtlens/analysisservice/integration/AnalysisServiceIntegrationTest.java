@@ -6,7 +6,7 @@ import com.debtlens.analysisservice.dto.AnalysisResult;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
+// import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 
  * NOTE: Disabled in CI - requires RabbitMQ running on localhost:5672
  */
-@Disabled("Requires RabbitMQ service running on localhost:5672 with guest/guest credentials")
+// @Disabled("Requires RabbitMQ service running on localhost:5672 with guest/guest credentials")
 @SpringBootTest
 @TestPropertySource(properties = {
     "spring.rabbitmq.host=localhost",
