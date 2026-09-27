@@ -9,10 +9,12 @@ import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -88,5 +90,21 @@ class RabbitMQMessagingTest {
         AmqpException exception = assertThrows(AmqpException.class, () -> publisher.publish(result));
 
         assertEquals("RabbitMQ unavailable", exception.getMessage());
+    }
+
+    @Test
+    void FR_02_analysisMessaging_shouldRecoverOnNextPublishAfterTransientRabbitFailure() {
+        RabbitTemplate rabbitTemplate = mock(RabbitTemplate.class);
+        AnalysisResultPublisher publisher = new AnalysisResultPublisher(rabbitTemplate);
+        AnalysisResult result = new AnalysisResult();
+        result.setJobId("100");
+        doThrow(new AmqpException("RabbitMQ temporarily unavailable"))
+                .doNothing()
+                .when(rabbitTemplate).convertAndSend(RabbitMQConfig.ANALYSIS_RESULT_QUEUE, result);
+
+        assertThrows(AmqpException.class, () -> publisher.publish(result));
+        assertDoesNotThrow(() -> publisher.publish(result));
+
+        verify(rabbitTemplate, times(2)).convertAndSend(RabbitMQConfig.ANALYSIS_RESULT_QUEUE, result);
     }
 }
