@@ -12,4 +12,5 @@ RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
 COPY --from=builder /build/target/*.jar app.jar
 EXPOSE 8082
+
 ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]

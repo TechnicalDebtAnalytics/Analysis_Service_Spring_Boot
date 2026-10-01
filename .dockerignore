@@ -4,3 +4,9 @@
 .env
 target
 *.log
+*.iml
+.mvn/
+mvnw
+mvnw.cmd
+.DS_Store
+Thumbs.db
