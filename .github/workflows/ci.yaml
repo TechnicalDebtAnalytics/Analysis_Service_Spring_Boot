@@ -1,4 +1,4 @@
-name: Analysis Service CI
+name: Analysis Service CI/CD
 
 on:
   push:
@@ -23,7 +23,10 @@ permissions:
   packages: write
 
 jobs:
-  build:
+  # ---------------------------------------------------------------------------
+  # 1. Continuous Integration: Build & Test
+  # ---------------------------------------------------------------------------
+  test-and-build:
     name: Build and Test
     runs-on: ubuntu-latest
 
@@ -53,7 +56,7 @@ jobs:
     name: Build & Push Docker Image
     needs: test-and-build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/deployment')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/deployment' || github.ref == 'refs/heads/develop')
 
     steps:
       - name: Checkout source code
