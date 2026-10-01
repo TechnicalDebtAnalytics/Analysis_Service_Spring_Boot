@@ -1,7 +1,9 @@
-target/
-.git/
-.github/
-.idea/
+.git
+.github
+.idea
+.env
+target
+*.log
 *.iml
 .mvn/
 mvnw
