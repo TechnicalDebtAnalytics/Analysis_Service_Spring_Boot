@@ -7,13 +7,16 @@ import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.comments.Comment;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 
@@ -275,9 +278,18 @@ public class JavaParserAnalyzer implements CodeAnalyzer {
                         // Comments extraction
                         // -------------------------
                         List<String> extractedComments = new ArrayList<>();
+                        Set<Comment> nestedClassComments = new HashSet<>();
+                        classDeclaration.findAll(ClassOrInterfaceDeclaration.class).stream()
+                                .filter(nestedClass -> nestedClass != classDeclaration)
+                                .forEach(nestedClass -> {
+                                    nestedClassComments.addAll(nestedClass.getAllContainedComments());
+                                    nestedClass.getComment().ifPresent(nestedClassComments::add);
+                                });
 
-                        // 1. Comments inside the class body
-                        classDeclaration.getAllContainedComments().forEach(comment -> {
+                        // 1. Comments owned by this class body, excluding nested classes
+                        classDeclaration.getAllContainedComments().stream()
+                                .filter(comment -> !nestedClassComments.contains(comment))
+                                .forEach(comment -> {
                             String content = comment.getContent();
                             if (content != null && !content.trim().isBlank()) {
                                 extractedComments.add(content.trim());
@@ -289,14 +301,6 @@ public class JavaParserAnalyzer implements CodeAnalyzer {
                             String content = comment.getContent();
                             if (content != null && !content.trim().isBlank() && !extractedComments.contains(content.trim())) {
                                 extractedComments.add(0, content.trim());
-                            }
-                        });
-
-                        // 3. Entire file comments (if single class file)
-                        compilationUnit.getAllContainedComments().forEach(comment -> {
-                            String content = comment.getContent();
-                            if (content != null && !content.trim().isBlank() && !extractedComments.contains(content.trim())) {
-                                extractedComments.add(content.trim());
                             }
                         });
 

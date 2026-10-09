@@ -5,7 +5,7 @@ import com.debtlens.analysisservice.metrics.RepositoryMetrics;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Path;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -65,12 +65,13 @@ public class RepositoryAnalyzer {
         // =====================================================
 
         Map<String, ClassMetrics> classMetricsMap =
-                new HashMap<>();
+                new LinkedHashMap<>();
 
         for (ClassMetrics metrics : javaParserMetrics) {
 
             String key = createKey(
-                    metrics.getFilePath()
+                    metrics.getFilePath(),
+                    metrics.getClassName()
             );
 
             classMetricsMap.put(key, metrics);
@@ -84,7 +85,8 @@ public class RepositoryAnalyzer {
         for (ClassMetrics ckMetric : ckMetrics) {
 
             String key = createKey(
-                    ckMetric.getFilePath()
+                    ckMetric.getFilePath(),
+                    ckMetric.getClassName()
             );
 
             ClassMetrics existing =
@@ -185,11 +187,23 @@ public class RepositoryAnalyzer {
         return repositoryMetrics;
     }
 
-    private String createKey(String filePath) {
+    private String createKey(String filePath, String className) {
 
-        return Path.of(filePath)
+        String normalizedPath = Path.of(filePath)
                 .toAbsolutePath()
                 .normalize()
                 .toString();
+
+        String normalizedClassName = className == null ? "" : className.trim();
+        int packageSeparator = normalizedClassName.lastIndexOf('.');
+        if (packageSeparator >= 0) {
+            normalizedClassName = normalizedClassName.substring(packageSeparator + 1);
+        }
+        int nestedClassSeparator = normalizedClassName.lastIndexOf('$');
+        if (nestedClassSeparator >= 0) {
+            normalizedClassName = normalizedClassName.substring(nestedClassSeparator + 1);
+        }
+
+        return normalizedPath + "\u0000" + normalizedClassName;
     }
 }
