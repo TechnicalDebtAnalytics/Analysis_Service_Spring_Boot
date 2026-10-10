@@ -99,6 +99,10 @@ class JavaParserAnalyzerTest {
         assertEquals(4, outer.getNumberOfAttributes());
         assertEquals(1, outer.getNumberOfPublicAttributes());
         assertEquals(2, outer.getNumberOfPrivateAttributes());
+        assertTrue(outer.getComments().stream().anyMatch(comment -> comment.contains("Outer class comment")));
+        assertTrue(outer.getComments().stream().anyMatch(comment -> comment.contains("outer method comment")));
+        assertTrue(outer.getComments().stream().noneMatch(comment -> comment.contains("Inner class comment")));
+        assertTrue(outer.getComments().stream().noneMatch(comment -> comment.contains("inner method comment")));
         ClassMetrics inner = byClassName.get("Inner");
         assertNotNull(inner);
         assertEquals(mainSource.toString(), inner.getFilePath());
@@ -111,6 +115,8 @@ class JavaParserAnalyzerTest {
         assertEquals(1, inner.getNumberOfAttributes());
         assertEquals(0, inner.getNumberOfPublicAttributes());
         assertEquals(1, inner.getNumberOfPrivateAttributes());
+        assertTrue(inner.getComments().stream().anyMatch(comment -> comment.contains("Inner class comment")));
+        assertTrue(inner.getComments().stream().anyMatch(comment -> comment.contains("inner method comment")));
         assertTrue(results.stream().noneMatch(metrics -> metrics.getClassName().equals("IgnoredTest")));
     }
 }
