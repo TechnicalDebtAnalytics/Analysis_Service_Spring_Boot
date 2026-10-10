@@ -151,4 +151,51 @@ class RepositoryAnalyzerTest {
         verify(ckAnalyzer).analyze(repositoryPath);
         verify(jGitAnalyzer).enrichGitMetrics(eq(repositoryPath), anyList());
     }
+
+    @Test
+    void analyze_keepsAndMergesMultipleClassesFromTheSameSourceFile() {
+        Path repositoryPath = tempDir.resolve("multi-class-repository").toAbsolutePath();
+        Path sharedFile = repositoryPath.resolve("src/main/java/com/example/Services.java");
+
+        JavaParserAnalyzer javaParserAnalyzer = mock(JavaParserAnalyzer.class);
+        CKAnalyzer ckAnalyzer = mock(CKAnalyzer.class);
+        JGitAnalyzer jGitAnalyzer = mock(JGitAnalyzer.class);
+
+        ClassMetrics firstParsed = new ClassMetrics();
+        firstParsed.setClassName("FirstService");
+        firstParsed.setFilePath(sharedFile.toString());
+        firstParsed.setStartLine(1);
+        firstParsed.setEndLine(20);
+
+        ClassMetrics secondParsed = new ClassMetrics();
+        secondParsed.setClassName("SecondService");
+        secondParsed.setFilePath(sharedFile.toString());
+        secondParsed.setStartLine(22);
+        secondParsed.setEndLine(50);
+
+        ClassMetrics firstCk = new ClassMetrics();
+        firstCk.setClassName("com.example.FirstService");
+        firstCk.setFilePath(sharedFile.toString());
+        firstCk.setCbo(3);
+
+        ClassMetrics secondCk = new ClassMetrics();
+        secondCk.setClassName("com.example.SecondService");
+        secondCk.setFilePath(sharedFile.toString());
+        secondCk.setCbo(8);
+
+        when(javaParserAnalyzer.analyze(repositoryPath)).thenReturn(List.of(firstParsed, secondParsed));
+        when(ckAnalyzer.analyze(repositoryPath)).thenReturn(List.of(firstCk, secondCk));
+
+        RepositoryMetrics result = new RepositoryAnalyzer(javaParserAnalyzer, ckAnalyzer, jGitAnalyzer)
+                .analyze(repositoryPath);
+
+        assertEquals(2, result.getClassMetrics().size());
+        assertEquals(3, result.getClassMetrics().stream()
+                .filter(metrics -> metrics.getClassName().equals("FirstService"))
+                .findFirst().orElseThrow().getCbo());
+        assertEquals(8, result.getClassMetrics().stream()
+                .filter(metrics -> metrics.getClassName().equals("SecondService"))
+                .findFirst().orElseThrow().getCbo());
+        verify(jGitAnalyzer).enrichGitMetrics(eq(repositoryPath), anyList());
+    }
 }
